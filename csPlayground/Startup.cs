@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
@@ -26,6 +28,17 @@ namespace csPlayground
 		public void ConfigureServices(IServiceCollection services)
 		{
 			services.AddControllers();
+			services.AddCors();
+
+			services.AddSwaggerGen(c =>
+			{
+				c.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo { Title = "csPlayground", Version = "v1" });
+				//c.EnableAnnotations();
+				//var filePath = Path.Combine(System.AppContext.BaseDirectory, "csPlayground.xml");
+				var document = new System.Xml.XPath.XPathDocument(Assembly.GetExecutingAssembly()
+						.GetManifestResourceStream("csPlayground.csPlayground.xml"));
+				c.IncludeXmlComments(() => document, true);
+			});
 		}
 
 		// This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -35,6 +48,8 @@ namespace csPlayground
 			{
 				app.UseDeveloperExceptionPage();
 			}
+
+			app = ConfigureSwagger(app);
 
 			app.UseHttpsRedirection();
 
@@ -46,6 +61,17 @@ namespace csPlayground
 			{
 				endpoints.MapControllers();
 			});
+		}
+
+		private IApplicationBuilder ConfigureSwagger(IApplicationBuilder app)
+		{
+			app.UseSwaggerUI(c =>
+			{
+				c.SwaggerEndpoint("/swagger/v1/swagger.json", "csPlayground");
+			});
+			app.UseSwagger();
+
+			return app;
 		}
 	}
 }
